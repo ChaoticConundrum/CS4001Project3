@@ -21,12 +21,15 @@ public class GameFragment extends Fragment {
             { R.id.tile14, R.id.tile24, R.id.tile34, R.id.tile44 },
     };
 
+    private GameModel model = null;
+
     private ArrayList<ImageView> tileviews = new ArrayList<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+        model = new GameModel(8);
     }
 
     @Override
