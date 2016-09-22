@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:rowCount="4"
+        android:columnCount="4">
+
+        <ImageView
+            android:id="@+id/tile11"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile21"
+            style="@style/GameTile"/>
+        <ImageView
+            android:id="@+id/tile31"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile41"
+            style="@style/GameTile"/>
+
+        <ImageView
+            android:id="@+id/tile12"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile22"
+            style="@style/GameTile"/>
+        <ImageView
+            android:id="@+id/tile32"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile42"
+            style="@style/GameTile"/>
+
+        <ImageView
+            android:id="@+id/tile13"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile23"
+            style="@style/GameTile"/>
+        <ImageView
+            android:id="@+id/tile33"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile43"
+            style="@style/GameTile"/>
+
+        <ImageView
+            android:id="@+id/tile14"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile24"
+            style="@style/GameTile"/>
+        <ImageView
+            android:id="@+id/tile34"
+            style="@style/GameTile" />
+        <ImageView
+            android:id="@+id/tile44"
+            style="@style/GameTile"/>
+
+    </GridLayout>
+
+</RelativeLayout>
