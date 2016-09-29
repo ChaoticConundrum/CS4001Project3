@@ -6,14 +6,14 @@
     <GridLayout
         android:id="@+id/gamegrid"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="match_parent">
+        <!--
         android:rowCount="4"
         android:columnCount="4">
 
         <ImageView
             android:id="@+id/tile0"
             style="@style/GameTile" />
-        <!--
         <ImageView
             android:id="@+id/tile21"
             style="@style/GameTile"/>
