@@ -6,8 +6,11 @@ import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
+import android.media.audiofx.BassBoost;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +46,8 @@ public class GameFragment extends Fragment implements GameViewControl {
     private GameModel model = null;
     private ArrayList<Tile> tiles = new ArrayList<>();
     private ArrayList<Integer> images = new ArrayList<>(Arrays.asList(resimg));
+    private ArrayList<Drawable> bitmaps = new ArrayList<>();
+
     private Handler handler = null;
     private Timer fliptimer = null;
 
@@ -50,6 +55,9 @@ public class GameFragment extends Fragment implements GameViewControl {
     private Drawable tileColorBack;
     private Drawable tileColorMatch;
     private Drawable tileColorNoMatch;
+
+    private MediaPlayer matchSound;
+    private MediaPlayer noMatchSound;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,14 +68,37 @@ public class GameFragment extends Fragment implements GameViewControl {
         Collections.shuffle(images);
     }
 
-    public void setModel(GameModel gmodel){
-        model = gmodel;
+    public void setImageCount(int count){
+        if(model == null) {
+            model = new GameModel(this, count);
+            // Clear bitmap array
+            for(int i = 0; i < model.getNumTiles(); ++i) {
+                bitmaps.add(null);
+            }
+        }
+    }
+
+    public void storeBitmap(int i, Drawable bitmap){
+        bitmaps.set(i, bitmap);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View root = inflater.inflate(R.layout.fragment_game, container, false);
+
+        final GameModel gmodel = model;
+
+        ViewGroup.LayoutParams tileParam = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ViewGroup.LayoutParams imageParam = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+
+        tileColorFront = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileFront));
+        tileColorBack = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileBack));
+        tileColorMatch = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileMatch));
+        tileColorNoMatch = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileNoMatch));
+
+        matchSound = MediaPlayer.create(getContext(), Settings.System.DEFAULT_NOTIFICATION_URI);
+        noMatchSound = MediaPlayer.create(getContext(), Settings.System.DEFAULT_ALARM_ALERT_URI);
 
         // Setup grid
         GridLayout grid = (GridLayout) root.findViewById(R.id.gamegrid);
@@ -77,19 +108,11 @@ public class GameFragment extends Fragment implements GameViewControl {
         tiles.clear();
         for(int i = 0; i < model.getNumTiles(); ++i){
             final int ti = i;
-            final GameModel gmodel = model;
 
             // Create tile layout container
             final TileLayout tilelayout = new TileLayout(getContext());
-            ViewGroup.LayoutParams tileParam = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             tilelayout.setLayoutParams(tileParam);
             tilelayout.setPadding(10, 10, 10, 10);
-
-            ViewGroup.LayoutParams imageParam = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            tileColorFront = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileFront));
-            tileColorBack = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileBack));
-            tileColorMatch = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileMatch));
-            tileColorNoMatch = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileNoMatch));
 
             // Front of tile
             final ImageView front = new ImageView(getContext());
@@ -99,7 +122,10 @@ public class GameFragment extends Fragment implements GameViewControl {
             // Back of tile
             final ImageView back = new ImageView(getContext());
             back.setLayoutParams(imageParam);
-            back.setBackground(tileColorBack);
+            if(model.getMatched(i))
+                back.setBackground(tileColorMatch);
+            else
+                back.setBackground(tileColorBack);
             //back.setAdjustViewBounds(true);
             back.setScaleType(ImageView.ScaleType.CENTER_CROP);
             back.setPadding(10, 10, 10, 10);
@@ -119,8 +145,12 @@ public class GameFragment extends Fragment implements GameViewControl {
                     //Log.d("DBG", "Resize to " + x + "," + y);
 
                     // Load image in background
-                    ImageResourceWorkerTask imageWorker = new ImageResourceWorkerTask(getResources(), back, x, y);
-                    imageWorker.execute(images.get(model.getImageId(ti)));
+                    if(bitmaps.size() != model.getNumTiles() || bitmaps.get(ti) == null) {
+                        ImageResourceWorkerTask imageWorker = new ImageResourceWorkerTask(getResources(), GameFragment.this, ti, back, x, y);
+                        imageWorker.execute(images.get(model.getImageId(ti)));
+                    } else {
+                        back.setImageDrawable(bitmaps.get(ti));
+                    }
 
                     // Set fixed tile dimensions
                     int tilex = tilelayout.getMeasuredWidth();
@@ -148,7 +178,6 @@ public class GameFragment extends Fragment implements GameViewControl {
 
             // Add tile to grid
             GridLayout.LayoutParams gridParam = new GridLayout.LayoutParams(GridLayout.spec(GridLayout.UNDEFINED, 1, 1f), GridLayout.spec(GridLayout.UNDEFINED, 1, 1f));
-            //gridParam.setMargins(10, 10, 10, 10);
             grid.addView(tilelayout, gridParam);
 
             // Store the views and animators
@@ -161,6 +190,15 @@ public class GameFragment extends Fragment implements GameViewControl {
         }
 
         return root;
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Set score
+        TextView score = (TextView) getActivity().findViewById(R.id.score);
+        score.setText(Integer.toString(model.getFlipCount()));
     }
 
     // Based on http://stackoverflow.com/a/28328782/4526277
@@ -188,12 +226,20 @@ public class GameFragment extends Fragment implements GameViewControl {
     public void tilesMatched(int i, int j) {
         tiles.get(i).back.setBackground(tileColorMatch);
         tiles.get(j).back.setBackground(tileColorMatch);
+
+        // Play match sound
+        if(matchSound.isPlaying()) {
+            matchSound.pause();
+            matchSound.seekTo(0);
+        }
+        matchSound.start();
     }
 
     @Override
     public void tilesNotMatched(int i, int j) {
         tiles.get(i).back.setBackground(tileColorNoMatch);
         tiles.get(j).back.setBackground(tileColorNoMatch);
+        //noMatchSound.start();
     }
 
     @Override

@@ -94,6 +94,10 @@ public class GameModel {
         return (state[i] == TileState.FLIP) || (state[i] == TileState.MATCH);
     }
 
+    public boolean getMatched(int i){
+        return (state[i] == TileState.MATCH);
+    }
+
     public int getFlipCount(){
         return flipcount;
     }
