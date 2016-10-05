@@ -2,6 +2,8 @@ package com.example.cawate14.cs4001project3;
 
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Timer;
 
@@ -20,19 +22,26 @@ public class GameModel {
     private TileState[] state = null;
     private int lastflip = -1;
     private int flipcount = 0;
+    private int rempairs;
 
     public GameModel(GameViewControl gameview, int image_count) {
         view = gameview;
         count = image_count;
+        rempairs = count;
         timer = new Timer();
 
         // Random image array
-        images = new int[count * 2];
+        ArrayList<Integer> tmpimg = new ArrayList<>();
         for(int i = 0; i < count; ++i){
-            images[i*2] = i;
-            images[i*2+1] = i;
+            tmpimg.add(i);
+            tmpimg.add(i);
         }
-        //shuffleTiles(images);
+        Collections.shuffle(tmpimg);
+
+        images = new int[tmpimg.size()];
+        for(int i = 0; i < tmpimg.size(); ++i){
+            images[i] = tmpimg.get(i);
+        }
 
         // State array
         state = new TileState[count * 2];
@@ -46,8 +55,8 @@ public class GameModel {
         // Flip the tile
         if(state[i] == TileState.HIDE) {
             state[i] = TileState.FLIP;
-            view.flipTile(i);
             ++flipcount;
+            view.flipTile(i);
 
             if (lastflip >= 0) {
                 if (images[i] == images[lastflip]) {
@@ -56,6 +65,11 @@ public class GameModel {
                     state[i] = TileState.MATCH;
                     state[lastflip] = TileState.MATCH;
                     view.tilesMatched(i, lastflip);
+
+                    // Check if game is finished
+                    --rempairs;
+                    if(rempairs == 0)
+                        view.gameFinished();
                 } else {
                     Log.d("DBG", "Not Matched " + i + "," + lastflip);
                     // No match, unflip

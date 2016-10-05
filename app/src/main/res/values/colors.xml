@@ -4,6 +4,8 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
+    <color name="tileFront">#FF4477</color>
+    <color name="tileBack">#0000FF</color>
     <color name="tileMatch">#00AA00</color>
     <color name="tileNoMatch">#AA0000</color>
 </resources>

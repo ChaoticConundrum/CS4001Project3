@@ -1,21 +1,23 @@
 package com.example.cawate14.cs4001project3;
 
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.app.Fragment;
+import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.GridLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,8 +26,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class GameFragment extends Fragment implements GameViewControl {
-
-    private static final int IMAGE_COUNT = 8;
 
     private static final Integer[] resimg = {
             R.drawable.badaxx,
@@ -46,23 +46,22 @@ public class GameFragment extends Fragment implements GameViewControl {
     private Handler handler = null;
     private Timer fliptimer = null;
 
+    private Drawable tileColorFront;
+    private Drawable tileColorBack;
+    private Drawable tileColorMatch;
+    private Drawable tileColorNoMatch;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        model = new GameModel(this, IMAGE_COUNT);
         handler = new Handler();
         fliptimer = new Timer();
-        //Collections.shuffle(images);
+        Collections.shuffle(images);
     }
 
-    // Based on http://stackoverflow.com/a/28328782/4526277
-    private static int getClosestFactors(int in){
-        int test = (int)Math.floor(Math.sqrt(in));
-        while(in % test != 0){
-            test--;
-        }
-        return test;
+    public void setModel(GameModel gmodel){
+        model = gmodel;
     }
 
     @Override
@@ -74,12 +73,6 @@ public class GameFragment extends Fragment implements GameViewControl {
         GridLayout grid = (GridLayout) root.findViewById(R.id.gamegrid);
         grid.setColumnCount(getClosestFactors(model.getNumTiles()));
 
-        final float density = getResources().getDisplayMetrics().density;
-        Log.d("DBG", "Density " + density + "," +
-                getResources().getDisplayMetrics().densityDpi + "," +
-                getResources().getDisplayMetrics().scaledDensity + ","
-        );
-
         // Init image views
         tiles.clear();
         for(int i = 0; i < model.getNumTiles(); ++i){
@@ -87,27 +80,30 @@ public class GameFragment extends Fragment implements GameViewControl {
             final GameModel gmodel = model;
 
             // Create tile layout container
-            // A GridLayout is used here because GONE children automatically take up no space
             final TileLayout tilelayout = new TileLayout(getContext());
             ViewGroup.LayoutParams tileParam = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             tilelayout.setLayoutParams(tileParam);
             tilelayout.setPadding(10, 10, 10, 10);
 
             ViewGroup.LayoutParams imageParam = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            Drawable fg = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.colorAccent));
-            Drawable bg = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.colorPrimary));
+            tileColorFront = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileFront));
+            tileColorBack = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileBack));
+            tileColorMatch = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileMatch));
+            tileColorNoMatch = new ColorDrawable(ContextCompat.getColor(getContext(), R.color.tileNoMatch));
 
             // Front of tile
             final ImageView front = new ImageView(getContext());
             front.setLayoutParams(imageParam);
-            front.setBackground(fg);
+            front.setBackground(tileColorFront);
 
             // Back of tile
             final ImageView back = new ImageView(getContext());
             back.setLayoutParams(imageParam);
-            back.setBackground(bg);
+            back.setBackground(tileColorBack);
             //back.setAdjustViewBounds(true);
             back.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            back.setPadding(10, 10, 10, 10);
+            back.setCropToPadding(true);
 
             // Setup layout callback for measurement
             ViewTreeObserver vto = front.getViewTreeObserver();
@@ -167,14 +163,20 @@ public class GameFragment extends Fragment implements GameViewControl {
         return root;
     }
 
+    // Based on http://stackoverflow.com/a/28328782/4526277
+    private static int getClosestFactors(int in){
+        int test = (int)Math.floor(Math.sqrt(in));
+        while(in % test != 0){
+            test--;
+        }
+        return test;
+    }
+
     @Override
     public void flipTile(final int i) {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                tiles.get(i).anim.start();
-            }
-        });
+        tiles.get(i).anim.start();
+        TextView score = (TextView) getActivity().findViewById(R.id.score);
+        score.setText(Integer.toString(model.getFlipCount()));
     }
 
     @Override
@@ -184,18 +186,27 @@ public class GameFragment extends Fragment implements GameViewControl {
 
     @Override
     public void tilesMatched(int i, int j) {
-        //tiles.get(i).back.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.tileMatch));
-        //tiles.get(j).back.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.tileMatch));
+        tiles.get(i).back.setBackground(tileColorMatch);
+        tiles.get(j).back.setBackground(tileColorMatch);
     }
 
     @Override
     public void tilesNotMatched(int i, int j) {
-        //tiles.get(i).back.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.tileNoMatch));
-        //tiles.get(j).back.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.tileNoMatch));
+        tiles.get(i).back.setBackground(tileColorNoMatch);
+        tiles.get(j).back.setBackground(tileColorNoMatch);
+    }
+
+    @Override
+    public void gameFinished() {
+        // Finish the activity
+        Intent result = new Intent();
+        result.putExtra("SCORE_RESULT", model.getFlipCount());
+        getActivity().setResult(Activity.RESULT_OK, result);
+        getActivity().finish();
     }
 
     class Tile {
-        public ViewGroup layout;
+        public TileLayout layout;
         public ImageView front;
         public ImageView back;
         public ValueAnimator anim;
@@ -216,6 +227,7 @@ public class GameFragment extends Fragment implements GameViewControl {
                 public void run() {
                     // Reverse flip
                     tiles.get(tile).anim.reverse();
+                    tiles.get(tile).back.setBackground(tileColorBack);
                 }
             });
         }

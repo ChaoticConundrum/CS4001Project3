@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.GridLayout;
 
+// This class is based on a GridLayout because GONE children automatically take up no space
 public class TileLayout extends GridLayout {
 
     int fixWidth = 0;

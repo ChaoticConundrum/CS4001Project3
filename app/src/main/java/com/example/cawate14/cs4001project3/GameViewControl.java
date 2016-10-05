@@ -13,4 +13,7 @@ public interface GameViewControl {
     // Tiles i and j are not a match
     void tilesNotMatched(int i, int j);
 
+    // All pictures matched, game finished
+    void gameFinished();
+
 }

@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">CS4001Project3</string>
+    <string name="title">Picture Matching Game</string>
+    <string name="difficulty">Difficulty:</string>
+    <string name="previous_score">Previous Score:</string>
+    <string name="n_a">N/A</string>
+    <string name="start">Start</string>
+    <string name="default_diff">8</string>
+    <string name="init_score">0</string>
 </resources>
