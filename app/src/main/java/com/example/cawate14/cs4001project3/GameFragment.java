@@ -14,6 +14,8 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,7 +88,7 @@ public class GameFragment extends Fragment implements GameViewControl {
 
             // Create tile layout container
             // A GridLayout is used here because GONE children automatically take up no space
-            GridLayout tilelayout = new GridLayout(getContext());
+            final TileLayout tilelayout = new TileLayout(getContext());
             ViewGroup.LayoutParams tileParam = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             tilelayout.setLayoutParams(tileParam);
             tilelayout.setPadding(10, 10, 10, 10);
@@ -105,23 +107,29 @@ public class GameFragment extends Fragment implements GameViewControl {
             back.setLayoutParams(imageParam);
             back.setBackground(bg);
             //back.setAdjustViewBounds(true);
-            //back.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            back.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
             // Setup layout callback for measurement
             ViewTreeObserver vto = front.getViewTreeObserver();
             vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
+                    // Remove the layout listener
                     front.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    //int x = (int)Math.floor(front.getMeasuredWidth() / density);
-                    //int y = (int)Math.floor(front.getMeasuredHeight() / density);
+
+                    // Get real dimensions
                     int x = front.getMeasuredWidth();
                     int y = front.getMeasuredHeight();
-                    Log.d("DBG", "Resize to " + x + "," + y);
+                    //Log.d("DBG", "Resize to " + x + "," + y);
 
                     // Load image in background
                     ImageResourceWorkerTask imageWorker = new ImageResourceWorkerTask(getResources(), back, x, y);
                     imageWorker.execute(images.get(model.getImageId(ti)));
+
+                    // Set fixed tile dimensions
+                    int tilex = tilelayout.getMeasuredWidth();
+                    int tiley = tilelayout.getMeasuredHeight();
+                    tilelayout.setFixedDimensions(tilex, tiley);
                 }
             });
 
@@ -187,7 +195,7 @@ public class GameFragment extends Fragment implements GameViewControl {
     }
 
     class Tile {
-        public GridLayout layout;
+        public ViewGroup layout;
         public ImageView front;
         public ImageView back;
         public ValueAnimator anim;

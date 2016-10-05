@@ -36,7 +36,8 @@ public class ImageResourceWorkerTask extends AsyncTask<Integer, Void, Drawable> 
         if (imageViewReference != null && drawable != null) {
             final ImageView imageView = imageViewReference.get();
             if (imageView != null) {
-                imageView.setBackground(drawable);
+                imageView.setImageDrawable(drawable);
+                //imageView.setBackground(drawable);
             }
         }
     }
